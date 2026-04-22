@@ -1,0 +1,35 @@
+name: Deploy Contoso_University_Core
+
+on:
+  workflow_run:
+    workflows: ["Pack Contoso_University_Core"]
+    branches: [main]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+    environment: production
+    steps:
+      # Step 1: Install Power Platform Tools (required before any powerplatform-actions@v1)
+      - name: Install Power Platform Tools
+        uses: microsoft/powerplatform-actions/actions-install@v1
+
+      # Step 2: Download packed solution artifact from the Pack workflow
+      - name: Download packed solution
+        uses: dawidd6/action-download-artifact@v20
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: pack-solution.yml
+          name: packed-solution
+
+      # Step 3: Import the solution into the target Power Platform environment
+      - name: Import Solution
+        uses: microsoft/powerplatform-actions/import-solution@v1
+        with:
+          environment-url: https://org2ca2be12.crm.dynamics.com/
+          user-name: ${{ secrets.USERNAME }}
+          password-secret: ${{ secrets.PASSWORD }}
+          solution-file: contoso_university_core_managed.zip
